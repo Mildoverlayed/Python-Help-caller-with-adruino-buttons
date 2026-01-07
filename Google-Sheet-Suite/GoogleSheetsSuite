@@ -1,5 +1,16 @@
+from typing import List, Tuple
+from colorama import Fore
 import serial
 import gspread
+import time
+
+# CONFIGS
+api_key_file = 'Google-Sheet-Suite/gspread-credentials.json'
+spreadsheet_id = '1xjq3ZotDutenPljjXwocRDQ97dvmN7OyVo6JjZDjJi4'  # Replace with your Google Sheet ID
+data_sheet_name = 'data'
+config_sheet_name = 'config'
+# END CONFIGS
+
 
 
 def read_serial_data(ser: serial.Serial) -> tuple[bool, bytes]:
@@ -18,24 +29,65 @@ def read_serial_data(ser: serial.Serial) -> tuple[bool, bytes]:
         return False, b''
     
 
-    
-    
+def data_sync() -> None:
+    """Sync data to Google Sheets and if APi timeout occurs inores the sync"""
+    try:
+        for index in range(len(buttons)):
+            data_sheet.update_cell(index + 2, 2, buttons[index]['NEEDSHELP'])  # Assuming NEEDSHELP is in column 4
+        print(Fore.YELLOW + "Data synced to Google Sheets \n" + Fore.RESET)
+    except gspread.exceptions.APIError as e:
+        print(Fore.RED + f"Error syncing data to Google Sheets to many requests:" + Fore.RESET + f" {e}")
+
+def data_download() -> None:
+    """Download data from Google Sheets to local buttons variable"""
+    try:
+        global buttons
+        records = data_sheet.get_all_records()
+        buttons = records # used as a temp storage of buttons inorder to save on api calls {[NAME,ID,INDEX,NEEDSHELP],[],[]}
+        print(Fore.YELLOW + "Data downloaded from Google Sheets" + Fore.RESET)
+    except gspread.exceptions.APIError as e:
+        print(Fore.RED + f"Error syncing data to Google Sheets to many requests:" + Fore.RESET + f" {e}")    
+
+
 # gspread setup   
-gc = gspread.service_account(filename='gspread-credentials.json')
-sh = gc.open_by_key('your-google-sheet-key-here')
+gc = gspread.service_account(filename=api_key_file)
+sh = gc.open_by_key(spreadsheet_id) # Replace with your Google Sheet ID
+data_sheet = sh.worksheet(data_sheet_name)  # Assuming we're working with the first sheet
+data_download()  # Initial sync
+
 # end gspread setup
     
-    
-    
+# Load configurations for MC
+configs_sheet = sh.worksheet(config_sheet_name)
+configs = configs_sheet.get_all_records()
+serial_ports: List[Tuple[str, serial.Serial]] = []
+for config in configs:
+    try:
+        ser = serial.Serial(config['PORT'], config['BUADRATE'], timeout=config['TIMEOUT'])
+        serial_ports.append((config['ID'], ser))
+        print(Fore.BLUE + f"Opened port for ID: {config['ID']}\n" + Fore.RESET)
+    except serial.SerialException as e:
+        print(Fore.RED + f"Failed to open port for ID {config['ID']}: {e}\n" + Fore.RESET)
+
+# End config loads for MC
+  
+  
+# start
+
 while True:
-    for port_id, ser in serial_ports:
+    for _, ser in serial_ports:
         success, received_bytes = read_serial_data(ser)
         if success:
             if len(received_bytes) == 4:
                 if (received_bytes[0] == 0x0f and received_bytes[3] == 0xf0):
-                    print(f"Data received from ID: {received_bytes[1]:02X} with INDEX: {received_bytes[2]:02X}")
+                    print(Fore.GREEN + f"Signal received from ID: {received_bytes[1]:02X} with INDEX: {received_bytes[2]:02X}" + Fore.RESET)
                     for button in buttons:
                         if button['ID'] == received_bytes[1] and button['INDEX'] == received_bytes[2]:
-                            print(f"Button found: {button} set to 1")
-                            button["NEEDSHELP"] = 1
-                            data_sync()
+                            if len(button["NEEDSHELP"]) == 0:
+                                print(f"Button found: {button} set to {time.strftime('%I:%M:%S %p', time.localtime())}")
+                                button["NEEDSHELP"] = time.strftime('%I:%M:%S %p', time.localtime())
+                                data_sync()
+                            else:
+                                print(f"Button found: {button} already set to {button['NEEDSHELP']} removing from list")
+                                button["NEEDSHELP"] = ""
+                                data_sync()
