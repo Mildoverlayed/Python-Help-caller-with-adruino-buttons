@@ -1,0 +1,26 @@
+[
+    {
+        "NAME": "test1",
+        "ID": 1,
+        "INDEX": 1,
+        "NEEDSHELP": 0
+    },
+    {
+        "NAME": "test2",
+        "ID": 1,
+        "INDEX": 2,
+        "NEEDSHELP": 0
+    },
+    {
+        "NAME": "test3",
+        "ID": 2,
+        "INDEX": 1,
+        "NEEDSHELP": 0
+    },
+    {
+        "NAME": "test4",
+        "ID": 2,
+        "INDEX": 2,
+        "NEEDSHELP": 0
+    }
+]

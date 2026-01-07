@@ -1,0 +1,41 @@
+import serial
+import gspread
+
+
+def read_serial_data(ser: serial.Serial) -> tuple[bool, bytes]:
+    """simple call to read the incoming traffic of a serial interface 4 bytes at a time
+
+    Args:
+        ser (serial.Serial): serial interface to read form
+
+    Returns:
+        tuple[bool, bytes]: returns true if data was recived and what that data was
+    """
+    if ser.in_waiting > 0:
+        data = ser.read(4)
+        return True, data
+    else:
+        return False, b''
+    
+
+    
+    
+# gspread setup   
+gc = gspread.service_account(filename='gspread-credentials.json')
+sh = gc.open_by_key('your-google-sheet-key-here')
+# end gspread setup
+    
+    
+    
+while True:
+    for port_id, ser in serial_ports:
+        success, received_bytes = read_serial_data(ser)
+        if success:
+            if len(received_bytes) == 4:
+                if (received_bytes[0] == 0x0f and received_bytes[3] == 0xf0):
+                    print(f"Data received from ID: {received_bytes[1]:02X} with INDEX: {received_bytes[2]:02X}")
+                    for button in buttons:
+                        if button['ID'] == received_bytes[1] and button['INDEX'] == received_bytes[2]:
+                            print(f"Button found: {button} set to 1")
+                            button["NEEDSHELP"] = 1
+                            data_sync()

@@ -1,0 +1,14 @@
+[
+    {
+        "ID": "1",
+        "port": "COM8",
+        "baudrate": 9600,
+        "timeout": 1
+    },
+    {
+        "ID": "2",
+        "port": "COM9",
+        "baudrate": 9600,
+        "timeout": 1
+    }
+]
