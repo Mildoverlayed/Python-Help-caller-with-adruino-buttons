@@ -63,8 +63,8 @@ configs = configs_sheet.get_all_records()
 serial_ports: List[Tuple[str, serial.Serial]] = []
 for config in configs:
     try:
-        ser = serial.Serial(config['PORT'], config['BUADRATE'], timeout=config['TIMEOUT'])
-        serial_ports.append((config['ID'], ser))
+        ser = serial.Serial(config['PORT'], config['BUADRATE'], timeout=config['TIMEOUT']) # type: ignore 
+        serial_ports.append((config['ID'], ser)) # type: ignore
         print(Fore.BLUE + f"Opened port for ID: {config['ID']}\n" + Fore.RESET)
     except serial.SerialException as e:
         print(Fore.RED + f"Failed to open port for ID {config['ID']}: {e}\n" + Fore.RESET)
@@ -83,7 +83,8 @@ while True:
                     print(Fore.GREEN + f"Signal received from ID: {received_bytes[1]:02X} with INDEX: {received_bytes[2]:02X}" + Fore.RESET)
                     for button in buttons:
                         if button['ID'] == received_bytes[1] and button['INDEX'] == received_bytes[2]:
-                            if len(button["NEEDSHELP"]) == 0:
+                            
+                            if len(button["NEEDSHELP"]) == 0: # type: ignore
                                 print(f"Button found: {button} set to {time.strftime('%I:%M:%S %p', time.localtime())}")
                                 button["NEEDSHELP"] = time.strftime('%I:%M:%S %p', time.localtime())
                                 data_sync()
