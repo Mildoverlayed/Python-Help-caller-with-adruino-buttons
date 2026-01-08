@@ -5,7 +5,7 @@ import gspread
 import time
 
 # CONFIGS
-api_key_file = 'Google-Sheet-Suite/gspread-credentials.json'  # Path to your service account credentials JSON file and maybe its full path so no bugs :)
+api_key_file = 'gspread-credentials.json'  # Path to your service account credentials JSON file and maybe its full path so no bugs :)
 spreadsheet_id = '1xjq3ZotDutenPljjXwocRDQ97dvmN7OyVo6JjZDjJi4'  # Replace with your Google Sheet ID
 data_sheet_name = 'data'
 config_sheet_name = 'config'
