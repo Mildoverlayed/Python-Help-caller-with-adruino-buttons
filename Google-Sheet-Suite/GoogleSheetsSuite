@@ -29,11 +29,10 @@ def read_serial_data(ser: serial.Serial) -> tuple[bool, bytes]:
         return False, b''
     
 
-def data_sync() -> None:
+def data_sync(index: int) -> None:
     """Sync data to Google Sheets and if APi timeout occurs inores the sync"""
     try:
-        for index in range(len(buttons)):
-            data_sheet.update_cell(index + 2, 2, buttons[index]['NEEDSHELP'])  # Assuming NEEDSHELP is in column 4
+        data_sheet.update_cell(index + 2, 2, buttons[index]['NEEDSHELP'])  # Assuming NEEDSHELP is in column 4
         print(Fore.YELLOW + "Data synced to Google Sheets \n" + Fore.RESET)
     except gspread.exceptions.APIError as e:
         print(Fore.RED + f"Error syncing data to Google Sheets to many requests:" + Fore.RESET + f" {e}")
@@ -81,14 +80,14 @@ while True:
             if len(received_bytes) == 4:
                 if (received_bytes[0] == 0x0f and received_bytes[3] == 0xf0):
                     print(Fore.GREEN + f"Signal received from ID: {received_bytes[1]:02X} with INDEX: {received_bytes[2]:02X}" + Fore.RESET)
-                    for button in buttons:
+                    for index, button in enumerate(buttons):
                         if button['ID'] == received_bytes[1] and button['INDEX'] == received_bytes[2]:
                             
                             if len(button["NEEDSHELP"]) == 0: # type: ignore
                                 print(f"Button found: {button} set to {time.strftime('%I:%M:%S %p', time.localtime())}")
                                 button["NEEDSHELP"] = time.strftime('%I:%M:%S %p', time.localtime())
-                                data_sync()
+                                data_sync(index)
                             else:
                                 print(f"Button found: {button} already set to {button['NEEDSHELP']} removing from list")
                                 button["NEEDSHELP"] = ""
-                                data_sync()
+                                data_sync(index)
